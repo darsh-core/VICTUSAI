@@ -1,20 +1,11 @@
-# SANKHYAI (संख्या-AI) 🎯
+# VICTUSYAI 🎯
 ### AI-Powered Competency Intelligence & Personalized Learning Platform for the Official Statistical System of India
-
-[![SIH 2026](https://img.shields.io/badge/Smart%20India%20Hackathon-2026-orange.svg)](https://www.sih.gov.in/)
-[![Problem ID](https://img.shields.io/badge/Problem%20ID-26101-blue.svg)](#)
-[![Ministry](https://img.shields.io/badge/Ministry-MoSPI-green.svg)](https://www.mospi.gov.in/)
-[![Category](https://img.shields.io/badge/Category-Smart%20Education%20%2F%20Governance-purple.svg)](#)
-[![License](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%200.111-009688.svg)](https://fastapi.tiangolo.com/)
-[![React 19](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite-61DAFB.svg)](https://react.dev/)
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2B%20pgvector-336791.svg)](https://github.com/pgvector/pgvector)
 
 ---
 
 ## 📌 Executive Summary
 
-**SANKHYAI** is an enterprise-grade, closed-loop competency intelligence and adaptive learning ecosystem built for the **Ministry of Statistics and Programme Implementation (MoSPI)**, Government of India (Smart India Hackathon 2026 — Problem Statement **26101**).
+**VICTUSAI** is an enterprise-grade, closed-loop competency intelligence and adaptive learning ecosystem built for the **Ministry of Statistics and Programme Implementation (MoSPI)**, Government of India (Smart India Hackathon 2026 — Problem Statement **26101**).
 
 The platform transforms workforce development across the Indian Statistical Service (ISS), Subordinate Statistical Service (SSS), and MoSPI administrative cadres by:
 1. **Evaluating officials against role-specific competency matrices** spanning 5 standardized proficiency levels (Basic Awareness to Master/Strategy).
