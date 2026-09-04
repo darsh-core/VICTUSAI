@@ -1,4 +1,4 @@
-# VICTUSYAI 🎯
+# VICTUSAI 🎯
 ### AI-Powered Competency Intelligence & Personalized Learning Platform for the Official Statistical System of India
 
 ---
