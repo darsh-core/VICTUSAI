@@ -24,6 +24,17 @@ import { RoleReadinessPage } from "../pages/RoleReadinessPage"
 import { ProgressPage } from "../pages/ProgressPage"
 import { DemoIGOTPlayerPage } from "../pages/DemoIGOTPlayerPage"
 
+import { WorkforceAnalyticsPage } from "../pages/trainer/WorkforceAnalyticsPage"
+import { EmployeeListPage } from "../pages/trainer/EmployeeListPage"
+import { EmployeeDetailTwinPage } from "../pages/trainer/EmployeeDetailTwinPage"
+import { AIQuestionReviewPage } from "../pages/trainer/AIQuestionReviewPage"
+import { AssessmentAnalyticsPage } from "../pages/trainer/AssessmentAnalyticsPage"
+import { LearningPlanMonitorPage } from "../pages/trainer/LearningPlanMonitorPage"
+import { TrainingEffectivenessPage } from "../pages/trainer/TrainingEffectivenessPage"
+import { AIInsightsPage } from "../pages/trainer/AIInsightsPage"
+import { AlertsPage } from "../pages/trainer/AlertsPage"
+import { ReportsPage } from "../pages/trainer/ReportsPage"
+
 // ==========================================
 // ROUTE GUARD (AUTHENTICATED ONLY + ASSESSMENT GATING)
 // ==========================================
@@ -77,6 +88,46 @@ export const router = createBrowserRouter([
       {
         path: "/dashboard",
         element: <DashboardPage />
+      },
+      {
+        path: "/analytics/workforce",
+        element: <WorkforceAnalyticsPage />
+      },
+      {
+        path: "/employees",
+        element: <EmployeeListPage />
+      },
+      {
+        path: "/employees/:id",
+        element: <EmployeeDetailTwinPage />
+      },
+      {
+        path: "/questions/review",
+        element: <AIQuestionReviewPage />
+      },
+      {
+        path: "/assessments/analytics/:id",
+        element: <AssessmentAnalyticsPage />
+      },
+      {
+        path: "/learning-plans",
+        element: <LearningPlanMonitorPage />
+      },
+      {
+        path: "/training-effectiveness",
+        element: <TrainingEffectivenessPage />
+      },
+      {
+        path: "/ai-insights",
+        element: <AIInsightsPage />
+      },
+      {
+        path: "/alerts",
+        element: <AlertsPage />
+      },
+      {
+        path: "/reports",
+        element: <ReportsPage />
       },
       {
         path: "/onboarding/role",
@@ -153,3 +204,4 @@ export const router = createBrowserRouter([
     ]
   }
 ]);
+

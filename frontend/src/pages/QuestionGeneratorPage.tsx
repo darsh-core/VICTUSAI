@@ -249,20 +249,16 @@ export const QuestionGeneratorPage = () => {
                           </Badge>
                           <Badge variant="secondary">Confidence: {q.confidence * 100}%</Badge>
                           <button 
-                            onClick={async () => {
-                              // Fetch raw chunk text manually or mock from context
-                              if (q.source_chunk_ids && q.source_chunk_ids[0]) {
-                                // For mock E2E we display a preview of text
-                                setActiveChunkText(
-                                  q.explanation.includes("Stratification") 
-                                  ? "Stratified sampling divides a population into homogeneous groups (strata) to ensure key sub-populations are represented and overall survey variance is reduced." 
-                                  : "Random sampling ensures that selection probability is known and non-zero, allowing valid statistical inferences."
-                                );
-                              }
+                            onClick={() => {
+                              setActiveChunkText(
+                                activeChunkText === (q.source_chunk_text || q.explanation) 
+                                  ? null 
+                                  : (q.source_chunk_text || q.explanation)
+                              );
                             }}
                             className="text-xs text-gov-blue-600 hover:text-gov-blue-800 underline font-semibold"
                           >
-                            View Source Citation Chunk
+                            {activeChunkText === (q.source_chunk_text || q.explanation) ? "Hide Source Chunk" : "View Source Citation Chunk"}
                           </button>
                         </div>
 

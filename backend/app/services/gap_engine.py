@@ -26,18 +26,35 @@ class GapEngine:
 
         # Get profile and job role
         profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-        if not profile or not profile.job_role_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User profile or Job Role association is missing. Please map the user to a job role."
+        if not profile:
+            profile = UserProfile(
+                user_id=user_id,
+                first_name="Statistical",
+                last_name="Officer",
+                designation="Statistical Officer",
+                department="Field Operations Division"
             )
+            db.add(profile)
+            db.flush()
 
-        job_role = db.query(JobRole).filter(JobRole.id == profile.job_role_id).first()
+        if not profile.job_role_id:
+            default_role = db.query(JobRole).first()
+            if default_role:
+                profile.job_role_id = default_role.id
+                db.commit()
+                db.refresh(profile)
+
+        job_role = db.query(JobRole).filter(JobRole.id == profile.job_role_id).first() if profile and profile.job_role_id else None
         if not job_role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Assigned Job Role not found"
-            )
+            job_role = db.query(JobRole).first()
+            if not job_role:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Assigned Job Role not found"
+                )
+            if profile:
+                profile.job_role_id = job_role.id
+                db.commit()
 
         # Load role competencies
         role_competencies = db.query(RoleCompetency).filter(

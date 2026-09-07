@@ -26,7 +26,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust for production
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -138,6 +138,9 @@ from app.api.v1.ai import router as ai_router
 from app.api.v1.copilot import router as copilot_router
 
 from app.api.v1.learning import router as learning_router
+from app.api.v1.trainer import router as trainer_router
+from app.api.v1.meta import router as meta_router
+from app.api.v1.me import router as me_router
 
 # Mount v1 routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
@@ -153,6 +156,10 @@ app.include_router(learning_plans_router, prefix=settings.API_V1_STR)
 app.include_router(documents_router, prefix=settings.API_V1_STR)
 app.include_router(ai_router, prefix=settings.API_V1_STR)
 app.include_router(copilot_router, prefix=settings.API_V1_STR)
+app.include_router(trainer_router, prefix=settings.API_V1_STR)
+app.include_router(meta_router, prefix=settings.API_V1_STR)
+app.include_router(me_router, prefix=settings.API_V1_STR)
 # Mount analytics endpoints (some have no prefix, registered directly inside router)
 app.include_router(analytics_router, prefix=settings.API_V1_STR)
+
 

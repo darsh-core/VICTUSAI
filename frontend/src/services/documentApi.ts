@@ -75,5 +75,9 @@ export const documentApi = {
       question_count: number;
       competency: string;
       difficulty: string;
-    }>(`/documents/${documentId}/generate-assessment`, params)
+    }>(`/documents/${documentId}/generate-assessment`, params),
+
+  deleteDocument: (id: string) =>
+    api.delete<{ message: string }>(`/documents/${id}`)
 }
+

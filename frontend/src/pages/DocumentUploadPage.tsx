@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Upload, FileText, ArrowLeft, CheckCircle, AlertTriangle } from "lucide-react"
+import { Upload, FileText, ArrowLeft, CheckCircle, AlertTriangle, Layers, Cpu, Sparkles, Check } from "lucide-react"
 
 import { documentApi } from "../services/documentApi"
-import { Button, Card, Progress, Alert } from "../components/ui/Primitives"
+import { Button, Card, Alert } from "../components/ui/Primitives"
+
+const STAGES = [
+  { id: "UPLOADING", label: "Uploading", icon: Upload },
+  { id: "EXTRACTING", label: "Extracting", icon: FileText },
+  { id: "CHUNKING", label: "Chunking", icon: Layers },
+  { id: "EMBEDDING", label: "Embedding", icon: Cpu },
+  { id: "INDEXED", label: "Indexed", icon: CheckCircle }
+];
 
 export const DocumentUploadPage = () => {
   const navigate = useNavigate();
@@ -32,15 +40,15 @@ export const DocumentUploadPage = () => {
           setError(details.metadata?.error || "Document processing failed. Please try again.");
           clearInterval(interval);
         } else if (details.status === "PROCESSING") {
-          setProgress(65);
+          setProgress((prev) => (prev < 85 ? prev + 5 : 85));
         } else if (details.status === "UPLOADED") {
-          setProgress(35);
+          setProgress(40);
         }
       } catch (err: any) {
         clearInterval(interval);
         setError(err.message || "Failed to fetch document status");
       }
-    }, 2000);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [docId]);
@@ -80,8 +88,8 @@ export const DocumentUploadPage = () => {
       setFile(null);
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setError("File exceeds 10MB size limit.");
+    if (selectedFile.size > 30 * 1024 * 1024) {
+      setError("File exceeds 30MB size limit.");
       setFile(null);
       return;
     }
@@ -111,6 +119,54 @@ export const DocumentUploadPage = () => {
       setUploading(false);
     }
   };
+
+  const getStageState = (stageId: string) => {
+    if (status === "INDEXED" || status === "READY" || progress >= 100) {
+      return "completed";
+    }
+    if (status === "FAILED") {
+      return "failed";
+    }
+
+    switch (stageId) {
+      case "UPLOADING":
+        if (status === "UPLOADING") return "active";
+        if (progress >= 15 || ["UPLOADED", "PROCESSING"].includes(status)) return "completed";
+        return "pending";
+      case "EXTRACTING":
+        if (status === "UPLOADED") return "active";
+        if (progress >= 40 || status === "PROCESSING") return "completed";
+        return "pending";
+      case "CHUNKING":
+        if (status === "PROCESSING" && progress <= 65) return "active";
+        if (progress > 65) return "completed";
+        return "pending";
+      case "EMBEDDING":
+        if (status === "PROCESSING" && progress > 65) return "active";
+        if (progress >= 95) return "completed";
+        return "pending";
+      case "INDEXED":
+        if (status === "INDEXED" || status === "READY" || progress >= 100) return "completed";
+        return "pending";
+      default:
+        return "pending";
+    }
+  };
+
+  const getCurrentStageLabel = () => {
+    if (status === "INDEXED" || status === "READY" || progress >= 100) return "Indexed & Ready";
+    if (status === "UPLOADING") return "Uploading File";
+    if (status === "UPLOADED") return "Extracting Text";
+    if (status === "PROCESSING") {
+      return progress <= 65 ? "Chunking Content" : "Embedding Vectors";
+    }
+    return "Processing";
+  };
+
+  // SVG Circular Math
+  const radius = 95;
+  const circumference = 2 * Math.PI * radius; // ~596.9
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -145,7 +201,7 @@ export const DocumentUploadPage = () => {
               />
               <Upload className="h-12 w-12 mx-auto text-slate-400 mb-4" />
               <p className="font-semibold text-slate-700">Drag & drop your training material here</p>
-              <p className="text-xs text-slate-400 mt-1">Supports PDF, DOCX, PPTX, or TXT (Max 10MB)</p>
+              <p className="text-xs text-slate-400 mt-1">Supports PDF, DOCX, PPTX, or TXT (Max 30MB)</p>
             </div>
 
             {file && (
@@ -166,46 +222,124 @@ export const DocumentUploadPage = () => {
         )}
 
         {status !== "IDLE" && (
-          <div className="space-y-6">
+          <div className="space-y-8 py-4">
+            {/* Gradient Circular Progress Ring */}
+            <div className="relative w-64 h-64 mx-auto flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90 filter drop-shadow-md" viewBox="0 0 230 230">
+                <defs>
+                  <linearGradient id="circleGradientRing" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#0B192C" />
+                    <stop offset="45%" stopColor="#2563EB" />
+                    <stop offset="85%" stopColor="#3B82F6" />
+                    <stop offset="100%" stopColor="#D4AF37" />
+                  </linearGradient>
+                  <linearGradient id="completedCircleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#10B981" />
+                    <stop offset="100%" stopColor="#059669" />
+                  </linearGradient>
+                </defs>
+                
+                {/* Background Ring Track */}
+                <circle
+                  cx="115"
+                  cy="115"
+                  r={radius}
+                  stroke="#E2E8F0"
+                  strokeWidth="14"
+                  fill="transparent"
+                />
+
+                {/* Animated Gradient Outer Ring */}
+                <circle
+                  cx="115"
+                  cy="115"
+                  r={radius}
+                  stroke={status === "INDEXED" || status === "READY" ? "url(#completedCircleGradient)" : "url(#circleGradientRing)"}
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  fill="transparent"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+
+              {/* Center Content with Percentage */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                <span className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-gov-blue-900 via-blue-700 to-amber-600 bg-clip-text text-transparent">
+                  {progress}%
+                </span>
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider mt-1">
+                  {getCurrentStageLabel()}
+                </span>
+                <div className="mt-2.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 shadow-inner">
+                  <div className={`w-2 h-2 rounded-full ${status === "INDEXED" || status === "READY" ? "bg-emerald-500" : "bg-gov-blue-600 animate-ping"}`} />
+                  <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">
+                    {status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5 Stage Titles Timeline Cards */}
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-semibold text-gov-blue-900">Processing Stage: {status}</span>
-                <span className="text-sm font-semibold text-gov-blue-900">{progress}%</span>
+              <p className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
+                Pipeline Processing Stages
+              </p>
+              <div className="grid grid-cols-5 gap-2 text-center">
+                {STAGES.map((stage) => {
+                  const stageState = getStageState(stage.id);
+                  const Icon = stage.icon;
+
+                  return (
+                    <div 
+                      key={stage.id}
+                      className={`p-2.5 rounded-xl border flex flex-col items-center justify-between transition-all duration-300 ${
+                        stageState === "completed"
+                          ? "bg-emerald-50/70 border-emerald-300 text-emerald-900 shadow-sm"
+                          : stageState === "active"
+                          ? "bg-blue-50 border-gov-blue-500 text-gov-blue-900 shadow-md ring-2 ring-gov-blue-200 scale-105"
+                          : "bg-slate-50/60 border-slate-200 text-slate-400 opacity-60"
+                      }`}
+                    >
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1 text-xs font-bold ${
+                        stageState === "completed"
+                          ? "bg-emerald-500 text-white"
+                          : stageState === "active"
+                          ? "bg-gov-blue-600 text-white animate-pulse"
+                          : "bg-slate-200 text-slate-500"
+                      }`}>
+                        {stageState === "completed" ? (
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        ) : (
+                          <Icon className="w-3.5 h-3.5" />
+                        )}
+                      </div>
+                      <span className="text-xs font-bold truncate max-w-full leading-tight">{stage.label}</span>
+                      <span className="text-[9px] mt-1 font-semibold uppercase tracking-wider">
+                        {stageState === "completed" ? "Done" : stageState === "active" ? "Processing" : "Pending"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-              <Progress value={progress} className="h-2.5" />
             </div>
 
-            {/* Stages timeline indicator */}
-            <div className="grid grid-cols-5 gap-2 text-center text-xs font-semibold mt-4">
-              <div className={status === "UPLOADING" ? "text-gov-blue-600" : "text-slate-400"}>
-                <p>Uploading</p>
-                <div className={`h-1.5 rounded-full mt-1 ${status === "UPLOADING" ? "bg-gov-blue-500" : "bg-slate-200"}`}></div>
-              </div>
-              <div className={status === "UPLOADED" ? "text-gov-blue-600" : "text-slate-400"}>
-                <p>Extracting</p>
-                <div className={`h-1.5 rounded-full mt-1 ${status === "UPLOADED" ? "bg-gov-blue-500" : "bg-slate-200"}`}></div>
-              </div>
-              <div className={status === "PROCESSING" ? "text-gov-blue-600" : "text-slate-400"}>
-                <p>Chunking</p>
-                <div className={`h-1.5 rounded-full mt-1 ${status === "PROCESSING" ? "bg-gov-blue-500" : "bg-slate-200"}`}></div>
-              </div>
-              <div className={status === "PROCESSING" ? "text-gov-blue-600" : "text-slate-400"}>
-                <p>Embedding</p>
-                <div className={`h-1.5 rounded-full mt-1 ${status === "PROCESSING" ? "bg-gov-blue-500" : "bg-slate-200"}`}></div>
-              </div>
-              <div className={status === "INDEXED" ? "text-green-600" : "text-slate-400"}>
-                <p>Indexed</p>
-                <div className={`h-1.5 rounded-full mt-1 ${status === "INDEXED" ? "bg-green-500" : "bg-slate-200"}`}></div>
-              </div>
-            </div>
-
-            {status === "INDEXED" && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center space-y-3">
-                <CheckCircle className="h-10 w-10 text-green-500 mx-auto" />
-                <p className="font-semibold text-green-800 text-sm">Document successfully indexed into pgvector!</p>
-                <Button variant="secondary" onClick={() => navigate("/documents")}>
-                  Return to Documents
-                </Button>
+            {(status === "INDEXED" || status === "READY") && (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-3 shadow-sm animate-fade-in">
+                <CheckCircle className="h-10 w-10 text-emerald-500 mx-auto" />
+                <div>
+                  <h3 className="font-bold text-emerald-900 text-base">Document Successfully Indexed!</h3>
+                  <p className="text-emerald-700 text-xs mt-0.5">Vector embeddings are stored in pgvector and ready for RAG grounding.</p>
+                </div>
+                <div className="flex justify-center gap-3 pt-1">
+                  <Button variant="secondary" onClick={() => navigate("/documents")}>
+                    Return to Documents
+                  </Button>
+                  <Button variant="primary" onClick={() => navigate(`/documents/${docId}/generate`)}>
+                    Generate MCQs Now
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -228,3 +362,4 @@ export const DocumentUploadPage = () => {
     </div>
   );
 };
+

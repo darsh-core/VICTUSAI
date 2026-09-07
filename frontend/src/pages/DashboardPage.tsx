@@ -49,6 +49,8 @@ import { learningPlanApi } from "../services/learningPlanApi";
 import { learningApi } from "../services/learningApi";
 import { CompetencyGapDetail } from "../types/competency";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Progress } from "../components/ui/Primitives";
+import { AcademyDashboardPage } from "./trainer/AcademyDashboardPage";
+
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -69,6 +71,11 @@ export const DashboardPage = () => {
   // Allow trainers to toggle between Staff Academy view and Learner view
   const [viewMode, setViewMode] = useState<"staff" | "learner">(isTrainerOrStaff ? "staff" : "learner");
   const [selectedModalGap, setSelectedModalGap] = useState<CompetencyGapDetail | null>(null);
+
+  if (isTrainerOrStaff && viewMode === "staff") {
+    return <AcademyDashboardPage />;
+  }
+
 
   // 1. Fetch competency gaps for learner view
   const { 
@@ -302,7 +309,7 @@ export const DashboardPage = () => {
   }
 
   // -------------------------------------------------------------
-  // LEARNER DASHBOARD (SANKHYAI EMPLOYEE EXPERIENCE)
+  // LEARNER DASHBOARD (VICTUS AI EMPLOYEE EXPERIENCE)
   // -------------------------------------------------------------
   if (gapsLoading) {
     return (
@@ -401,6 +408,88 @@ export const DashboardPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* Flagship Competency Journey Banner */}
+      <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gov-gold/20 text-gov-gold flex items-center justify-center border border-gov-gold/30 shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold uppercase tracking-wide text-white">MY COMPETENCY JOURNEY</h2>
+              <p className="text-xs text-amber-300 font-bold">Closed-Loop Competency Elevation & Role Readiness</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/40">
+            Stage 4 of 8: Personalized Learning
+          </span>
+        </div>
+
+        {/* Competency Journey Pipeline */}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-2">
+          {[
+            { step: "1", title: "DISCOVER", active: false, done: true },
+            { step: "2", title: "ASSESS", active: false, done: true },
+            { step: "3", title: "IDENTIFY GAP", active: false, done: true },
+            { step: "4", title: "LEARN", active: true, done: false },
+            { step: "5", title: "PRACTICE", active: false, done: false },
+            { step: "6", title: "REASSESS", active: false, done: false },
+            { step: "7", title: "IMPROVE", active: false, done: false },
+            { step: "8", title: "ROLE READY", active: false, done: false }
+          ].map((item) => (
+            <div 
+              key={item.step}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+                item.active 
+                  ? "bg-gov-gold text-gov-blue-900 border-gov-gold font-extrabold shadow-md scale-105" 
+                  : item.done 
+                  ? "bg-slate-800 text-emerald-400 border-emerald-500/30 font-semibold" 
+                  : "bg-slate-800/40 text-slate-500 border-slate-700/50 opacity-60"
+              }`}
+            >
+              <span className="text-[10px] uppercase font-bold tracking-tight">{item.title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Signature Feature: NEXT BEST ACTION */}
+      <Card className="border-amber-400/60 bg-gradient-to-r from-amber-950 via-slate-900 to-gov-blue-950 text-white shadow-xl overflow-hidden">
+        <CardContent className="p-6 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-extrabold tracking-widest px-2.5 py-0.5 rounded bg-amber-400 text-slate-950">
+                YOUR NEXT BEST ACTION
+              </span>
+              <span className="text-xs text-amber-300 font-bold">Highest Priority Gap Alignment</span>
+            </div>
+            <h3 className="text-xl font-extrabold text-white leading-tight">
+              Complete: Survey Sampling and Estimation
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              <strong>Why?</strong> Your Survey Sampling competency is currently <strong>1.2 levels below</strong> the required level for your role as <em>{gapData.role.name}</em>.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-amber-200 pt-1 font-semibold">
+              <span>Estimated Duration: <strong>2h 30m</strong></span>
+              <span>•</span>
+              <span>Provider: <strong>iGOT Karmayogi</strong></span>
+              <span>•</span>
+              <span className="text-emerald-400">Target Outcome: <strong>Level 4.0 Mastery</strong></span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto">
+            <Button
+              onClick={() => navigate("/recommendations")}
+              className="bg-gov-gold hover:bg-amber-400 text-gov-blue-900 font-extrabold text-xs py-3 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2 uppercase tracking-wide cursor-pointer"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Start Action Course</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 2. Top Hero: Role Readiness Card (Prompt Section 8 & 17) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

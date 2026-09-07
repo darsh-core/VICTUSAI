@@ -31,13 +31,12 @@ def get_user_recommendations(
     current_user: AppUser = Depends(require_authenticated_user)
 ):
     # Authorization
-    if not current_user.is_superuser and current_user.id != user_id:
-        user_role_names = [role.name for role in current_user.roles]
-        if "SUPERVISOR" not in user_role_names and "MANAGER" not in user_role_names:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access forbidden: cannot view recommendations of other users"
-            )
+    user_role_names = [role.name for role in current_user.roles]
+    if not (current_user.is_superuser or current_user.id == user_id or any(r in ["TRAINER", "ADMIN", "ADMINISTRATOR", "SUPERVISOR", "MANAGER"] for r in user_role_names)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: cannot view recommendations of other users"
+        )
 
     # 1. Fetch recommendations (will generate if not persisted)
     recs = RecommendationService.get_recommendations(db, user_id=user_id)

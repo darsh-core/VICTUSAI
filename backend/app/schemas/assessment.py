@@ -88,6 +88,7 @@ class GeneratedMCQ(BaseModel):
     source_page: Optional[int] = None
     grounding_score: Optional[float] = None
     source_chunk_ids: List[uuid.UUID] = []
+    source_chunk_text: Optional[str] = None
 
 class GenerationRequest(BaseModel):
     competency_id: uuid.UUID

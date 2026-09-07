@@ -26,7 +26,7 @@ router = APIRouter(prefix="/documents", tags=["Document Management & AI RAG"])
 UPLOAD_DIR = "/Users/darshini/.gemini/antigravity-ide/scratch/sih-competency-platform/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".pptx", ".txt"}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE = 30 * 1024 * 1024  # 30 MB
 
 class RAGSearchRequest(BaseModel):
     query: str
@@ -74,7 +74,7 @@ def upload_document(
         if size == 0:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
         if size > MAX_FILE_SIZE:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File size exceeds 10MB limit")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File size exceeds 30MB limit")
             
         file_sha256 = hashlib.sha256(contents).hexdigest()
 
@@ -199,6 +199,48 @@ def get_document(
     }
 
 
+@router.delete("/{id}", summary="Delete Document")
+def delete_document(
+    id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(require_authenticated_user)
+):
+    user_roles = [r.name for r in current_user.roles]
+    if not (current_user.is_superuser or any(r in ["ADMIN", "ADMINISTRATOR", "TRAINER", "SUPERVISOR", "MANAGER", "EVALUATOR"] for r in user_roles)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only authorized personnel can delete documents")
+
+    doc = db.query(Document).filter(Document.id == id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # 1. Remove physical file if exists
+    if doc.storage_path and os.path.exists(doc.storage_path):
+        try:
+            os.remove(doc.storage_path)
+        except Exception:
+            pass
+
+    # 2. Delete associated embeddings, chunks, and questions linked to doc
+    chunks = db.query(DocumentChunk).filter(DocumentChunk.document_id == id).all()
+    chunk_ids = [c.id for c in chunks]
+    if chunk_ids:
+        db.query(DocumentEmbedding).filter(DocumentEmbedding.chunk_id.in_(chunk_ids)).delete(synchronize_session=False)
+        db.query(DocumentChunk).filter(DocumentChunk.document_id == id).delete(synchronize_session=False)
+
+    # 3. Clean up questions referencing this source_doc_id
+    questions = db.query(Question).filter(Question.source_doc_id == id).all()
+    for q in questions:
+        db.query(QuestionOption).filter(QuestionOption.question_id == q.id).delete(synchronize_session=False)
+        db.query(QuestionCompetency).filter(QuestionCompetency.question_id == q.id).delete(synchronize_session=False)
+        db.delete(q)
+
+    # 4. Delete document record
+    db.delete(doc)
+    db.commit()
+
+    return {"message": f"Document '{doc.title}' deleted successfully."}
+
+
 @router.post("/search", summary="RAG Similarity Search Debugger")
 def rag_search(
     request: RAGSearchRequest,
@@ -248,6 +290,75 @@ def generate_mcqs(
             difficulty=request.difficulty,
             count=request.count
         )
+
+        # Auto-persist generated MCQs into database so they populate AI Question Review Board
+        if settings.AI_PROVIDER == "groq":
+            active_model = settings.GROQ_MODEL
+        elif settings.AI_PROVIDER == "ollama":
+            active_model = settings.OLLAMA_MODEL
+        else:
+            active_model = "mini-lm-v2-grounded"
+
+        # Fetch or create Question Pool Assessment for this document
+        assessment = db.query(Assessment).filter(
+            Assessment.title == f"AI Grounded Question Pool: {doc.title}"
+        ).first()
+        if not assessment:
+            assessment = Assessment(
+                title=f"AI Grounded Question Pool: {doc.title}",
+                description=f"AI-generated grounded question pool for official publication '{doc.title}'.",
+                time_limit_minutes=20,
+                pass_percentage=60.0,
+                is_ai_generated=True
+            )
+            db.add(assessment)
+            db.flush()
+
+        valid_mcqs: List[GeneratedMCQ] = response_payload.get("questions", [])
+        for mcq in valid_mcqs:
+            source_chunk_id = mcq.source_chunk_ids[0] if mcq.source_chunk_ids else None
+            q = Question(
+                assessment_id=assessment.id,
+                text=mcq.question,
+                question_type="MCQ",
+                difficulty=mcq.difficulty,
+                explanation=mcq.explanation,
+                confidence=mcq.confidence,
+                source_doc_id=id,
+                source_page=mcq.source_page,
+                source_chunk_id=source_chunk_id,
+                generation_method="rag-grounded-v1",
+                ai_model=active_model,
+                grounding_score=mcq.grounding_score,
+                metadata_json={
+                    "source_chunk_ids": [str(cid) for cid in mcq.source_chunk_ids],
+                    "source_chunk_text": mcq.source_chunk_text,
+                    "review_status": "PENDING_REVIEW",
+                    "created_at": datetime.now().isoformat()
+                }
+            )
+            db.add(q)
+            db.flush()
+            
+            for opt in mcq.options:
+                is_correct = (mcq.options.index(opt) == mcq.correct_answer)
+                db_opt = QuestionOption(
+                    question_id=q.id,
+                    text=opt.text,
+                    is_correct=is_correct
+                )
+                db.add(db_opt)
+                
+            db_qc = QuestionCompetency(
+                question_id=q.id,
+                competency_id=request.competency_id,
+                target_level=3,
+                weight=1.0
+            )
+            db.add(db_qc)
+
+        db.commit()
+
         return response_payload
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -316,6 +427,7 @@ def generate_assessment(
             grounding_score=mcq.grounding_score,
             metadata_json={
                 "source_chunk_ids": [str(cid) for cid in mcq.source_chunk_ids],
+                "source_chunk_text": mcq.source_chunk_text,
                 "review_status": "PENDING_REVIEW",
                 "created_at": datetime.now().isoformat()
             }

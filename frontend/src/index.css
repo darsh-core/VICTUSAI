@@ -36,8 +36,16 @@
   }
 }
 
+html {
+  font-size: 16.5px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 min-h-screen antialiased font-sans;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 @keyframes gradientShift {

@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
-import { Upload, FileText, Settings, Eye, HelpCircle } from "lucide-react"
+import { Upload, FileText, Settings, Eye, HelpCircle, Trash2 } from "lucide-react"
 
 import { documentApi } from "../services/documentApi"
 import { Button, Card, Badge, Spinner } from "../components/ui/Primitives"
@@ -10,12 +10,28 @@ export const DocumentManagerPage = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["documents", page],
     queryFn: () => documentApi.listDocuments(page, 10),
     refetchInterval: 5000 // Poll every 5 seconds for processing statuses
   });
+
+  const handleDelete = async (docId: string, title: string) => {
+    if (window.confirm(`Are you sure you want to delete manual '${title}'? This will remove all associated vector indices and grounded questions.`)) {
+      try {
+        setDeletingId(docId);
+        await documentApi.deleteDocument(docId);
+        if (selectedDocId === docId) setSelectedDocId(null);
+        refetch();
+      } catch (err: any) {
+        alert(err.message || "Failed to delete document");
+      } finally {
+        setDeletingId(null);
+      }
+    }
+  };
 
   const { data: detailsDoc, isLoading: detailsLoading } = useQuery({
     queryKey: ["documentDetails", selectedDocId],
@@ -114,6 +130,17 @@ export const DocumentManagerPage = () => {
                             <Settings className="h-3.5 w-3.5" />
                             Generate MCQs
                           </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            disabled={deletingId === doc.id}
+                            onClick={() => handleDelete(doc.id, doc.title)}
+                            className="inline-flex items-center justify-center p-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                            title="Delete Document"
+                          >
+                            <Trash2 className="h-4 w-4 text-rose-600" />
+                          </Button>
+
                         </td>
                       </tr>
                     ))}

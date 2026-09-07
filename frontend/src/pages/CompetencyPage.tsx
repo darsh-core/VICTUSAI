@@ -17,25 +17,43 @@ import { useAuthStore } from "../store/authStore"
 import { competencyApi } from "../services/competencyApi"
 import { recommendationApi } from "../services/recommendationApi"
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button, Progress } from "../components/ui/Primitives"
+import { CompetencyRoleMappingView } from "../components/competency/CompetencyRoleMappingView"
+
+import { 
+  ResponsiveContainer, 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  Radar, 
+  Legend, 
+  Tooltip 
+} from "recharts"
 
 export const CompetencyPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const userId = user?.id || "";
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"TWIN" | "MAPPING">("TWIN");
 
-  // 1. Fetch user competencies (includes current levels)
+  // 1. Fetch all framework competencies
+  const { data: allCompsData, isLoading: allCompsLoading } = useQuery({
+    queryKey: ["all-competencies"],
+    queryFn: () => competencyApi.getCompetencies()
+  });
+
+  // 2. Fetch user competencies (includes current levels)
   const { 
     data: userComps, 
-    isLoading: compsLoading, 
-    error: compsError 
+    isLoading: compsLoading 
   } = useQuery({
     queryKey: ["user-competencies", userId],
     queryFn: () => competencyApi.getUserCompetencies(userId),
     enabled: !!userId
   });
 
-  // 2. Fetch competency gaps (to get required levels and gaps)
+  // 3. Fetch competency gaps (to get required levels and gaps)
   const { 
     data: gapData 
   } = useQuery({
@@ -44,11 +62,47 @@ export const CompetencyPage = () => {
     enabled: !!userId
   });
 
-  // 3. Fetch specific competency-specific recommendations if a competency is selected
-  const selectedUserComp = userComps?.find(uc => uc.competency_id === selectedCompId);
-  
+  // Build unified list of competencies
+  const frameworkList = allCompsData?.items || [];
+  const userCompMap = userComps ? Object.fromEntries(userComps.map(uc => [uc.competency_id, uc])) : {};
+  const gapMap = gapData ? Object.fromEntries(gapData.gaps.map(g => [g.competency_id, g])) : {};
+
+  // Construct merged items list
+  const mergedCompetencies = frameworkList.map(comp => {
+    const uc = userCompMap[comp.id];
+    const gapInfo = gapMap[comp.id];
+    return {
+      competency_id: comp.id,
+      id: comp.id,
+      current_level: uc ? uc.current_level : 2.5,
+      competency: comp,
+      gap_info: gapInfo,
+      evidences: uc?.evidences || []
+    };
+  });
+
+  // Radar data construction
+  const radarData = mergedCompetencies.slice(0, 7).map(uc => {
+    const gapInfo = gapMap[uc.competency_id];
+    return {
+      subject: uc.competency?.name ? (uc.competency.name.length > 18 ? uc.competency.name.substring(0, 16) + '...' : uc.competency.name) : uc.competency_id,
+      Current: uc.current_level,
+      Required: gapInfo ? gapInfo.required_level : 4.0,
+      fullMark: 5.0
+    };
+  });
+
+  // Auto-select first item if none selected
+  React.useEffect(() => {
+    if (!selectedCompId && mergedCompetencies.length > 0) {
+      setSelectedCompId(mergedCompetencies[0].id);
+    }
+  }, [mergedCompetencies, selectedCompId]);
+
+  const selectedUserComp = mergedCompetencies.find(uc => uc.competency_id === selectedCompId);
+
   const { 
-    data: compRecs, 
+    data: compRecs,
     isLoading: recsLoading 
   } = useQuery({
     queryKey: ["comp-specific-recommendations", userId, selectedCompId],
@@ -56,63 +110,115 @@ export const CompetencyPage = () => {
     enabled: !!userId && !!selectedCompId
   });
 
-  if (compsLoading) {
+  if (allCompsLoading || compsLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <svg className="animate-spin h-10 w-10 text-gov-blue-500" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
-        <span className="text-sm font-semibold text-slate-500">Loading competency profiles...</span>
+        <span className="text-sm font-semibold text-slate-500">Loading competency framework...</span>
       </div>
     );
   }
-
-  if (compsError || !userComps) {
-    return (
-      <div className="text-center py-12">
-        <ShieldAlert className="h-12 w-12 text-rose-500 mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-slate-900">Error loading competency profile</h3>
-        <p className="text-sm text-slate-500 mt-2">Try logging in again or verify the backend server connection.</p>
-      </div>
-    );
-  }
-
-  // Create lookup for gap priority and required levels
-  const gapMap = gapData ? Object.fromEntries(gapData.gaps.map(g => [g.competency_id, g])) : {};
 
   // Group competencies by domain framework (STATISTICAL, TECHNICAL, DIGITAL_GOVERNANCE, BEHAVIOURAL)
-  const domains: Record<string, typeof userComps> = {
+  const domains: Record<string, typeof mergedCompetencies> = {
     STATISTICAL: [],
     TECHNICAL: [],
     DIGITAL_GOVERNANCE: [],
     BEHAVIOURAL: []
   };
 
-  userComps.forEach(uc => {
-    // Determine domain from competency code prefix or default to STATISTICAL
-    const code = uc.competency?.code || "";
-    if (code.startsWith("STAT")) domains.STATISTICAL.push(uc);
-    else if (code.startsWith("TECH")) domains.TECHNICAL.push(uc);
-    else if (code.startsWith("GOV")) domains.DIGITAL_GOVERNANCE.push(uc);
-    else domains.BEHAVIOURAL.push(uc);
+  mergedCompetencies.forEach(item => {
+    const code = item.competency?.code || "";
+    if (code.startsWith("STAT")) domains.STATISTICAL.push(item);
+    else if (code.startsWith("TECH")) domains.TECHNICAL.push(item);
+    else if (code.startsWith("GOV") || code.startsWith("DIG")) domains.DIGITAL_GOVERNANCE.push(item);
+    else domains.BEHAVIOURAL.push(item);
   });
 
   const domainNames = {
-    STATISTICAL: "Statistical Domain",
+    STATISTICAL: "Statistical & Methodology Domain",
     TECHNICAL: "Technical & Computational Domain",
     DIGITAL_GOVERNANCE: "Digital Governance & Security",
-    BEHAVIOURAL: "Behavioural & Leadership"
+    BEHAVIOURAL: "Leadership & Management Domain"
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-950">My Competency Profile</h1>
-        <p className="text-sm text-slate-500">
-          Detailed metrics, framework mappings, and verified audit logs for your mapped skills.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <div className="flex items-center gap-2 text-gov-blue-600 mb-1">
+            <Award className="w-4 h-4" />
+            <span className="text-[11px] font-bold uppercase tracking-wider">Flagship Competency Companion</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-950">COMPETENCY INTELLIGENCE FRAMEWORK</h1>
+          <p className="text-xs text-slate-500 mt-1 font-medium">
+            Explore your AI Competency Twin or audit the complete Manual, MCQ, Competency & Role Mapping Architecture.
+          </p>
+        </div>
+
+        {/* View Switcher Buttons */}
+        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
+          <button
+            onClick={() => setActiveTab("TWIN")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeTab === "TWIN"
+                ? "bg-white text-gov-blue-900 shadow-sm border border-slate-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            My Competency Twin
+          </button>
+          <button
+            onClick={() => setActiveTab("MAPPING")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeTab === "MAPPING"
+                ? "bg-gov-blue-600 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Competency & Role Mapping
+          </button>
+        </div>
       </div>
+
+      {activeTab === "MAPPING" ? (
+        <CompetencyRoleMappingView />
+      ) : (
+        <>
+          {/* Radar Chart Visual Header */}
+      <Card className="border-indigo-100 bg-gradient-to-r from-slate-900 via-gov-blue-950 to-indigo-950 text-white shadow-xl">
+        <CardContent className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+          <div className="space-y-3 lg:col-span-1">
+            <Badge variant="outline" className="text-amber-300 border-amber-400/40 text-[10px] uppercase font-bold tracking-wider">
+              Multidimensional Competency Radar
+            </Badge>
+            <h2 className="text-lg font-extrabold text-white">Current vs Required Cadre Proficiency</h2>
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              Evaluates 7 core statistical dimensions against authoritative MoSPI cadre benchmarks. Dark blue fill indicates current level; gold boundary represents target required level.
+            </p>
+            <div className="pt-2 flex gap-4 text-xs font-semibold">
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-amber-400 inline-block" /> Required Level</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-gov-blue-500 inline-block" /> Current Level</span>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
+                <PolarGrid stroke="#334155" />
+                <PolarAngleAxis dataKey="subject" stroke="#94a3b8" tick={{ fill: '#cbd5e1', fontSize: 11 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 5]} stroke="#475569" />
+                <Radar name="Required" dataKey="Required" stroke="#fbbf24" fill="#fbbf24" fillOpacity={0.15} strokeWidth={2} />
+                <Radar name="Current" dataKey="Current" stroke="#38bdf8" fill="#0284c7" fillOpacity={0.45} strokeWidth={2} />
+                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         {/* Left: Grouped Competency List */}
@@ -296,6 +402,10 @@ export const CompetencyPage = () => {
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }
+
+

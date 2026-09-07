@@ -12,7 +12,11 @@ export const authApi = {
     return api.post<LoginResponse>("/auth/login", { email, password });
   },
   
-  getMe: async (): Promise<AppUser> => {
-    return api.get<AppUser>("/auth/me");
+  getMe: async (token?: string): Promise<AppUser> => {
+    const options: RequestInit = {};
+    if (token) {
+      options.headers = { Authorization: `Bearer ${token}` };
+    }
+    return api.get<AppUser>("/auth/me", options);
   }
 };

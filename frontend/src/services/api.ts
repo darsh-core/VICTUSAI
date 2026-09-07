@@ -20,7 +20,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
-  if (token) {
+  if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 

@@ -7,6 +7,8 @@ import { useAuthStore } from "../store/authStore"
 import { Button, Card, CardContent, Alert } from "../components/ui/Primitives"
 import { DEMO_MODE, DEMO_CREDENTIALS } from "../lib/constants"
 
+import victusLogo from "../assets/victusai.png"
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { setAuth, isAuthenticated, user } = useAuthStore();
@@ -18,7 +20,7 @@ export const LoginPage = () => {
 
   // If already authenticated, redirect based on assessment completion
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && user.id) {
       if (user.has_completed_assessment) {
         navigate("/dashboard");
       } else {
@@ -38,8 +40,7 @@ export const LoginPage = () => {
     setError(null);
     try {
       const data = await authApi.login(email, password);
-      setAuth(data.access_token, data.refresh_token, {} as any);
-      const userProfile = await authApi.getMe();
+      const userProfile = await authApi.getMe(data.access_token);
       setAuth(data.access_token, data.refresh_token, userProfile);
       
       if (userProfile.has_completed_assessment) {
@@ -63,10 +64,14 @@ export const LoginPage = () => {
     setError(null);
     try {
       const data = await authApi.login(DEMO_CREDENTIALS.email, DEMO_CREDENTIALS.password);
-      setAuth(data.access_token, data.refresh_token, {} as any);
-      const userProfile = await authApi.getMe();
+      const userProfile = await authApi.getMe(data.access_token);
       setAuth(data.access_token, data.refresh_token, userProfile);
-      navigate("/dashboard");
+      
+      if (userProfile.has_completed_assessment) {
+        navigate("/dashboard");
+      } else {
+        navigate("/onboarding/role");
+      }
     } catch (err: any) {
       console.error("Demo login error:", err);
       setError(err.message || "Demo login failed. Make sure the backend server is running.");
@@ -79,16 +84,16 @@ export const LoginPage = () => {
     <div className="relative min-h-screen flex flex-col bg-slate-900 overflow-hidden">
       
       {/* Official Govt Strip */}
-      <div className="bg-black/80 text-slate-300 py-1.5 px-6 text-[11px] font-medium flex justify-between items-center z-40 border-b border-white/10">
+      <div className="bg-black/80 text-slate-300 py-2 px-6 text-xs font-semibold flex justify-between items-center z-40 border-b border-white/10">
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <span className="text-white font-bold tracking-wide">भारत सरकार</span>
             <span className="opacity-50">|</span>
             <span className="tracking-wide">GOVERNMENT OF INDIA</span>
           </span>
         </div>
-        <div className="hidden md:flex items-center gap-4 text-[10px] tracking-wider uppercase">
-          <span>Ministry of Statistics and Programme Implementation (MoSPI)</span>
+        <div className="hidden md:flex items-center gap-4 text-xs tracking-wider uppercase font-semibold">
+          <span>iGOT Karmayogi Competency Intelligence Platform</span>
         </div>
       </div>
 
@@ -110,14 +115,14 @@ export const LoginPage = () => {
         
         {/* Header Block */}
         <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
-          <div className="inline-flex p-4 rounded-2xl bg-white/5 border border-white/10 shadow-2xl mb-4 backdrop-blur-sm">
-            <ShieldCheck className="h-12 w-12 text-gov-gold stroke-[1.5]" />
+          <div className="inline-flex p-4 rounded-2xl bg-white shadow-2xl mb-4 backdrop-blur-sm">
+            <img src={victusLogo} alt="VICTUS AI Logo" className="h-16 w-auto" />
           </div>
           <h2 className="text-center text-3xl font-extrabold tracking-tight text-white uppercase font-sans drop-shadow-sm">
-            SkillStat AI
+            VICTUS AI
           </h2>
-          <p className="mt-2 text-center text-xs text-slate-400 font-semibold uppercase tracking-[0.15em]">
-            Official Statistics Competency Intelligence
+          <p className="mt-2 text-center text-xs text-amber-300 font-bold uppercase tracking-wider">
+            AI-Powered Skill Intelligence for iGOT Karmayogi
           </p>
         </div>
 

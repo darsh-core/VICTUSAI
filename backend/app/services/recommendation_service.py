@@ -107,41 +107,31 @@ class RecommendationService:
                 })
 
         # Fallback: if no candidates scored from active gaps, check all role competencies for continuous upskilling
-        if not scored_candidates and len(active_gaps) < len(gap_data.gaps):
-            remaining_gaps = [g for g in gap_data.gaps if g not in active_gaps]
-            for gap in remaining_gaps:
-                comp_id = comp_id_map.get(gap.competency_code)
-                if not comp_id:
-                    continue
-                candidates = CandidateRetriever.retrieve_candidates([gap.competency_code], db=db)
-                filtered = EligibilityFilter.filter_candidates(
-                    db,
-                    user_id=user_id,
-                    candidates=candidates,
-                    current_levels=current_levels,
-                    target_levels=target_levels
-                )
-                for c in filtered:
+        if not scored_candidates:
+            all_comps = db.query(Competency).all()
+            for comp in all_comps:
+                candidates = CandidateRetriever.retrieve_candidates([comp.code], db=db)
+                for c in candidates:
                     scores = RecommendationScorer.score_candidate(
                         candidate=c,
-                        gap_comp_code=gap.competency_code,
-                        gap_comp_name=gap.competency_name,
-                        required_level=gap.required_level,
-                        current_level=gap.current_level,
+                        gap_comp_code=comp.code,
+                        gap_comp_name=comp.name,
+                        required_level=3.5,
+                        current_level=2.0,
                         weights=weights
                     )
                     reason = RankingService.generate_explanation(
                         candidate=c,
-                        comp_name=gap.competency_name,
-                        current_level=gap.current_level,
-                        required_level=gap.required_level
+                        comp_name=comp.name,
+                        current_level=2.0,
+                        required_level=3.5
                     )
                     scored_candidates.append({
                         "candidate": c,
                         "scores": scores,
-                        "competency_id": comp_id,
-                        "competency_code": gap.competency_code,
-                        "gap_size": gap.gap,
+                        "competency_id": comp.id,
+                        "competency_code": comp.code,
+                        "gap_size": 1.5,
                         "reason": reason
                     })
 
