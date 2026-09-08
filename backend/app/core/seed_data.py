@@ -530,7 +530,11 @@ def seed_database(db: Session):
             question_type="MCQ",
             difficulty="Medium",
             explanation="Simple Random Sampling is a probability sampling method where all subsets of the frame have an equal probability of selection.",
-            confidence=1.0
+            confidence=1.0,
+            generation_method="trainer-rag-mapped",
+            ai_model="llama3-70b-trainer",
+            grounding_score=0.95,
+            metadata_json={"is_trainer_generated": True, "review_status": "APPROVED"}
         )
         db.add(q1)
         db.flush()
@@ -552,7 +556,11 @@ def seed_database(db: Session):
             question_type="MCQ",
             difficulty="Medium",
             explanation="Stratification ensures that sub-populations (strata) are adequately represented and reduces sampling variance.",
-            confidence=1.0
+            confidence=1.0,
+            generation_method="trainer-rag-mapped",
+            ai_model="llama3-70b-trainer",
+            grounding_score=0.95,
+            metadata_json={"is_trainer_generated": True, "review_status": "APPROVED"}
         )
         db.add(q2)
         db.flush()

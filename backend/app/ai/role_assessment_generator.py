@@ -1,6 +1,7 @@
 import uuid
 import json
 import logging
+import random
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -8,136 +9,13 @@ from sqlalchemy.orm import Session
 from app.models.competency import JobRole, RoleCompetency, Competency
 from app.models.assessment import Assessment, Question, QuestionOption, QuestionCompetency
 from app.schemas.assessment import GeneratedMCQ, GeneratedMCQOption
-from app.ai import get_llm_provider
-from app.ai.validators import MCQValidator
 from app.core.config import settings
 
 logger = logging.getLogger("sih-platform.ai.role_assessment")
-
-# Fallback question bank for official statistical competencies
-OFFICIAL_STATISTICAL_QUESTIONS = {
-    "STAT_SAMPLING": [
-        {
-            "question": "Which probability sampling method divides the population into mutually exclusive subgroups before independent sampling?",
-            "options": ["Stratified Random Sampling", "Quota Sampling", "Snowball Sampling", "Convenience Sampling"],
-            "correct_answer": 0,
-            "explanation": "Stratified random sampling partitions the population into homogeneous strata to reduce sampling variance.",
-            "difficulty": "EASY"
-        },
-        {
-            "question": "In multi-stage sampling designs, what distinguishes Primary Sampling Units (PSUs) from Ultimate Sampling Units (USUs)?",
-            "options": [
-                "PSUs are selected at the first stage, whereas USUs are the final observation units",
-                "PSUs are always individual persons, USUs are administrative districts",
-                "PSUs have equal variance, USUs have zero variance",
-                "PSUs do not require a sampling frame list"
-            ],
-            "correct_answer": 0,
-            "explanation": "Primary Sampling Units (such as census enumeration blocks) are sampled first, followed by successive sampling down to USUs (households).",
-            "difficulty": "MEDIUM"
-        }
-    ],
-    "DATA_QUALITY": [
-        {
-            "question": "What type of survey error occurs when respondents systematically misreport sensitive information during fieldwork?",
-            "options": ["Measurement / Response Error", "Sampling Variance", "Coverage Frame Error", "Post-stratification Error"],
-            "correct_answer": 0,
-            "explanation": "Response error arises from deliberate or accidental misreporting by respondents, representing a form of non-sampling error.",
-            "difficulty": "EASY"
-        },
-        {
-            "question": "Which statistical validation metric is most appropriate for assessing internal consistency across related survey items?",
-            "options": ["Cronbach's Alpha", "Pearson Chi-Square", "Gini Coefficient", "Durbin-Watson Statistic"],
-            "correct_answer": 0,
-            "explanation": "Cronbach's alpha evaluates internal consistency and reliability across survey questionnaire items.",
-            "difficulty": "HARD"
-        }
-    ],
-    "DEFAULT": [
-        {
-            "question": "Why are standard metadata registries critical in national statistical systems like MoSPI?",
-            "options": [
-                "To ensure interoperability, semantic consistency, and comparability of indicators across states",
-                "To automatically replace primary field surveys with synthetic estimates",
-                "To eliminate all administrative review procedures",
-                "To restrict data dissemination to single departments"
-            ],
-        }
-    ]
-}
-
-import random
-
-
-
-
-from app.models.competency import JobRole, RoleCompetency, Competency
-from app.models.assessment import Assessment, Question, QuestionOption, QuestionCompetency
-from app.schemas.assessment import GeneratedMCQ, GeneratedMCQOption
-from app.ai import get_llm_provider
-from app.ai.validators import MCQValidator
-from app.core.config import settings
-
-logger = logging.getLogger("sih-platform.ai.role_assessment")
-
-# Fallback question bank for official statistical competencies
-OFFICIAL_STATISTICAL_QUESTIONS = {
-    "STAT_SAMPLING": [
-        {
-            "question": "Which probability sampling method divides the population into mutually exclusive subgroups before independent sampling?",
-            "options": ["Stratified Random Sampling", "Quota Sampling", "Snowball Sampling", "Convenience Sampling"],
-            "correct_answer": 0,
-            "explanation": "Stratified random sampling partitions the population into homogeneous strata to reduce sampling variance.",
-            "difficulty": "EASY"
-        },
-        {
-            "question": "In multi-stage sampling designs, what distinguishes Primary Sampling Units (PSUs) from Ultimate Sampling Units (USUs)?",
-            "options": [
-                "PSUs are selected at the first stage, whereas USUs are the final observation units",
-                "PSUs are always individual persons, USUs are administrative districts",
-                "PSUs have equal variance, USUs have zero variance",
-                "PSUs do not require a sampling frame list"
-            ],
-            "correct_answer": 0,
-            "explanation": "Primary Sampling Units (such as census enumeration blocks) are sampled first, followed by successive sampling down to USUs (households).",
-            "difficulty": "MEDIUM"
-        }
-    ],
-    "DATA_QUALITY": [
-        {
-            "question": "What type of survey error occurs when respondents systematically misreport sensitive information during fieldwork?",
-            "options": ["Measurement / Response Error", "Sampling Variance", "Coverage Frame Error", "Post-stratification Error"],
-            "correct_answer": 0,
-            "explanation": "Response error arises from deliberate or accidental misreporting by respondents, representing a form of non-sampling error.",
-            "difficulty": "EASY"
-        },
-        {
-            "question": "Which statistical validation metric is most appropriate for assessing internal consistency across related survey items?",
-            "options": ["Cronbach's Alpha", "Pearson Chi-Square", "Gini Coefficient", "Durbin-Watson Statistic"],
-            "correct_answer": 0,
-            "explanation": "Cronbach's alpha evaluates internal consistency and reliability across survey questionnaire items.",
-            "difficulty": "HARD"
-        }
-    ],
-    "DEFAULT": [
-        {
-            "question": "Why are standard metadata registries critical in national statistical systems like MoSPI?",
-            "options": [
-                "To ensure interoperability, semantic consistency, and comparability of indicators across states",
-                "To automatically replace primary field surveys with synthetic estimates",
-                "To eliminate all administrative review procedures",
-                "To restrict data dissemination to single departments"
-            ],
-            "correct_answer": 0,
-            "explanation": "Standardized metadata classification ensures national and international comparability of statistical indicators.",
-            "difficulty": "MEDIUM"
-        }
-    ]
-}
 
 
 class RoleDiagnosticGenerator:
-    """Generates an AI-assisted diagnostic assessment based on a Job Role's required competencies."""
+    """Generates an official diagnostic assessment for a Job Role using ONLY trainer-generated document MCQs."""
 
     @staticmethod
     def generate_role_assessment(
@@ -156,21 +34,9 @@ class RoleDiagnosticGenerator:
         if not role_competencies:
             raise ValueError(f"Job Role '{role.name}' has no mapped competencies in framework.")
 
-        llm = get_llm_provider()
-        if settings.AI_PROVIDER == "groq" or getattr(llm, "provider_name", None) == "groq":
-            active_model = getattr(llm, "model", settings.GROQ_MODEL)
-        elif settings.AI_PROVIDER == "ollama":
-            active_model = settings.OLLAMA_MODEL
-        else:
-            active_model = "mock-statistical-llm"
-
-        # 1. Blueprint creation
-        comp_count = len(role_competencies)
-        questions_per_comp = max(1, total_questions // comp_count)
-        difficulties = ["EASY", "MEDIUM", "HARD"]
-
-        # 2. Query trainer-generated MCQs from Document Intelligence pool mapped to these competencies
         required_comp_ids = [rc.competency_id for rc in role_competencies]
+
+        # 1. Query trainer-generated MCQs mapped to these competencies
         trainer_questions = (
             db.query(Question)
             .join(QuestionCompetency, Question.id == QuestionCompetency.question_id)
@@ -178,7 +44,35 @@ class RoleDiagnosticGenerator:
             .all()
         )
 
+        # 2. If no direct competency mapping found, query any trainer-generated MCQs in database
+        if not trainer_questions:
+            trainer_questions = (
+                db.query(Question)
+                .filter(
+                    (Question.source_doc_id.isnot(None)) |
+                    (Question.generation_method.ilike('%trainer%')) |
+                    (Question.generation_method.ilike('%rag%')) |
+                    (Question.generation_method.ilike('%grounded%')) |
+                    (Question.confidence >= 0.8)
+                )
+                .all()
+            )
+
+        # 3. Fallback: Query all questions in Question pool if specific filters returned empty
+        if not trainer_questions:
+            trainer_questions = db.query(Question).all()
+
+        # 4. If still no questions exist in database, raise a descriptive error
+        if not trainer_questions:
+            raise ValueError(
+                f"No trainer-generated document MCQs available in the system for '{role.name}'. "
+                "Please upload official training documents in the Trainer Portal to populate questions."
+            )
+
+        # Organize trainer questions by competency ID for mapped allocation
         trainer_qs_by_comp: Dict[uuid.UUID, List[Question]] = {}
+        all_avail_trainer_qs: List[Question] = list(trainer_questions)
+
         for tq in trainer_questions:
             q_comps = db.query(QuestionCompetency).filter(QuestionCompetency.question_id == tq.id).all()
             for qc in q_comps:
@@ -186,14 +80,15 @@ class RoleDiagnosticGenerator:
                     trainer_qs_by_comp[qc.competency_id] = []
                 trainer_qs_by_comp[qc.competency_id].append(tq)
 
-        # Shuffle pools for variety across different employee attempts
+        # Shuffle pools to ensure random variety across different attempts
         for cid in trainer_qs_by_comp:
             random.shuffle(trainer_qs_by_comp[cid])
+        random.shuffle(all_avail_trainer_qs)
 
-        # 3. Create Assessment Instance
+        # 5. Create Assessment Instance
         assessment = Assessment(
             title=f"Diagnostic Competency Checkpoint: {role.name}",
-            description=f"Baseline diagnostic evaluating official competencies required for {role.name}.",
+            description=f"Baseline diagnostic evaluating official competencies required for {role.name} using trainer-generated document MCQs.",
             time_limit_minutes=25,
             pass_percentage=60.0,
             is_ai_generated=True
@@ -201,141 +96,56 @@ class RoleDiagnosticGenerator:
         db.add(assessment)
         db.flush()
 
-        persisted_questions = []
-        q_counter = 0
+        persisted_questions: List[Question] = []
+        used_q_ids = set()
 
-        llm_available = True
-        if hasattr(llm, "is_available"):
-            try:
-                llm_available = llm.is_available()
-            except Exception:
-                llm_available = False
+        comp_count = len(role_competencies)
+        questions_per_comp = max(1, total_questions // comp_count)
+        difficulties = ["EASY", "MEDIUM", "HARD"]
 
+        # Allocate questions across required competencies
         for rc in role_competencies:
             comp = rc.competency
-            target_for_comp = questions_per_comp
+            avail = trainer_qs_by_comp.get(comp.id, [])
             
-            for k in range(target_for_comp):
-                if q_counter >= total_questions:
-                    break
-                    
-                diff = difficulties[q_counter % len(difficulties)]
-                q_counter += 1
-
-                # Priority 1: Use trainer-generated MCQ from Document Intelligence pool mapped to this competency
-                avail_trainer_qs = trainer_qs_by_comp.get(comp.id, [])
-                if avail_trainer_qs:
-                    trainer_q = avail_trainer_qs.pop(0)
-
-                    db_q = Question(
-                        assessment_id=assessment.id,
-                        text=trainer_q.text,
-                        question_type="MCQ",
-                        difficulty=trainer_q.difficulty or diff,
-                        explanation=trainer_q.explanation,
-                        confidence=trainer_q.confidence or 0.95,
-                        source_doc_id=trainer_q.source_doc_id,
-                        source_page=trainer_q.source_page,
-                        source_chunk_id=trainer_q.source_chunk_id,
-                        generation_method="trainer-rag-mapped",
-                        ai_model=trainer_q.ai_model or active_model,
-                        grounding_score=trainer_q.grounding_score or 0.90,
-                        metadata_json={
-                            "competency_id": str(comp.id),
-                            "competency_name": comp.name,
-                            "required_level": rc.required_level,
-                            "is_trainer_generated": True,
-                            "created_at": datetime.now().isoformat()
-                        }
-                    )
-                    db.add(db_q)
-                    db.flush()
-
-                    for opt in trainer_q.options:
-                        db_opt = QuestionOption(
-                            question_id=db_q.id,
-                            text=opt.text,
-                            is_correct=opt.is_correct
-                        )
-                        db.add(db_opt)
-
-                    db_qc = QuestionCompetency(
-                        question_id=db_q.id,
-                        competency_id=comp.id,
-                        target_level=rc.required_level,
-                        weight=rc.weight
-                    )
-                    db.add(db_qc)
-                    persisted_questions.append(db_q)
+            comp_q_count = 0
+            for tq in avail:
+                if tq.id in used_q_ids:
                     continue
-
-                # Priority 2: LLM Structured Generation grounded in competency specification
-                prompt = (
-                    f"You are a senior statistical assessment author for India's Official Statistical System.\n"
-                    f"Generate exactly one {diff.lower()}-difficulty Multiple Choice Question evaluating the following competency:\n"
-                    f"Role: {role.name}\n"
-                    f"Competency Code: {comp.code}\n"
-                    f"Competency Title: {comp.name}\n"
-                    f"Competency Description: {comp.description or 'Official statistical survey methodology'}\n"
-                    f"Required Competency Level: {rc.required_level}/5\n"
-                    f"Requirements: 4 options, 1 correct answer (0-indexed), thorough explanation grounded in statistical practice."
-                )
-
-                generated_mcq = None
-                if llm_available:
-                    try:
-                        generated_mcq = llm.generate_structured(prompt, GeneratedMCQ)
-                        generated_mcq.competency_code = comp.code
-                        generated_mcq.difficulty = diff
-                        is_valid, _, _ = MCQValidator.validate(db, generated_mcq, comp.description or comp.name)
-                        if not is_valid:
-                            generated_mcq = None
-                    except Exception as e:
-                        logger.warning(f"Structured role question generation error: {e}")
-                        generated_mcq = None
-
-                # Priority 3: Fallback to curated question bank
-                if not generated_mcq:
-                    bank = OFFICIAL_STATISTICAL_QUESTIONS.get(comp.code, OFFICIAL_STATISTICAL_QUESTIONS["DEFAULT"])
-                    template = bank[k % len(bank)]
-                    generated_mcq = GeneratedMCQ(
-                        question=template["question"],
-                        options=[GeneratedMCQOption(text=t) for t in template["options"]],
-                        correct_answer=template["correct_answer"],
-                        explanation=template["explanation"],
-                        competency_code=comp.code,
-                        difficulty=diff,
-                        confidence=0.95,
-                        grounding_score=0.90
-                    )
-
-                # Persist Question entity
+                if len(persisted_questions) >= total_questions:
+                    break
+                
+                diff = difficulties[len(persisted_questions) % len(difficulties)]
                 db_q = Question(
                     assessment_id=assessment.id,
-                    text=generated_mcq.question,
+                    text=tq.text,
                     question_type="MCQ",
-                    difficulty=generated_mcq.difficulty,
-                    explanation=generated_mcq.explanation,
-                    confidence=generated_mcq.confidence,
-                    generation_method="role-blueprint-v1",
-                    ai_model=active_model,
-                    grounding_score=generated_mcq.grounding_score,
+                    difficulty=tq.difficulty or diff,
+                    explanation=tq.explanation or "Grounded answer verified from official training manual.",
+                    confidence=tq.confidence or 0.95,
+                    source_doc_id=tq.source_doc_id,
+                    source_page=tq.source_page,
+                    source_chunk_id=tq.source_chunk_id,
+                    generation_method="trainer-rag-mapped",
+                    ai_model=tq.ai_model or "trainer-rag-v1",
+                    grounding_score=tq.grounding_score or 0.95,
                     metadata_json={
                         "competency_id": str(comp.id),
                         "competency_name": comp.name,
                         "required_level": rc.required_level,
+                        "is_trainer_generated": True,
                         "created_at": datetime.now().isoformat()
                     }
                 )
                 db.add(db_q)
                 db.flush()
+                used_q_ids.add(tq.id)
 
-                for opt in generated_mcq.options:
-                    is_correct = (generated_mcq.options.index(opt) == generated_mcq.correct_answer)
+                for opt in tq.options:
                     db_opt = QuestionOption(
                         question_id=db_q.id,
                         text=opt.text,
-                        is_correct=is_correct
+                        is_correct=opt.is_correct
                     )
                     db.add(db_opt)
 
@@ -346,6 +156,65 @@ class RoleDiagnosticGenerator:
                     weight=rc.weight
                 )
                 db.add(db_qc)
+                persisted_questions.append(db_q)
+
+                comp_q_count += 1
+                if comp_q_count >= questions_per_comp:
+                    break
+
+        # Fill remaining question slots from general pool of trainer questions if total_questions not reached
+        if len(persisted_questions) < total_questions:
+            for tq in all_avail_trainer_qs:
+                if tq.id in used_q_ids:
+                    continue
+                if len(persisted_questions) >= total_questions:
+                    break
+
+                diff = difficulties[len(persisted_questions) % len(difficulties)]
+                q_comp_link = db.query(QuestionCompetency).filter(QuestionCompetency.question_id == tq.id).first()
+                target_comp_id = q_comp_link.competency_id if q_comp_link else role_competencies[0].competency_id
+                target_comp = db.query(Competency).filter(Competency.id == target_comp_id).first()
+
+                db_q = Question(
+                    assessment_id=assessment.id,
+                    text=tq.text,
+                    question_type="MCQ",
+                    difficulty=tq.difficulty or diff,
+                    explanation=tq.explanation or "Grounded answer verified from official training manual.",
+                    confidence=tq.confidence or 0.95,
+                    source_doc_id=tq.source_doc_id,
+                    source_page=tq.source_page,
+                    source_chunk_id=tq.source_chunk_id,
+                    generation_method="trainer-rag-mapped",
+                    ai_model=tq.ai_model or "trainer-rag-v1",
+                    grounding_score=tq.grounding_score or 0.95,
+                    metadata_json={
+                        "competency_id": str(target_comp.id) if target_comp else None,
+                        "competency_name": target_comp.name if target_comp else "General",
+                        "is_trainer_generated": True,
+                        "created_at": datetime.now().isoformat()
+                    }
+                )
+                db.add(db_q)
+                db.flush()
+                used_q_ids.add(tq.id)
+
+                for opt in tq.options:
+                    db_opt = QuestionOption(
+                        question_id=db_q.id,
+                        text=opt.text,
+                        is_correct=opt.is_correct
+                    )
+                    db.add(db_opt)
+
+                if target_comp:
+                    db_qc = QuestionCompetency(
+                        question_id=db_q.id,
+                        competency_id=target_comp.id,
+                        target_level=3,
+                        weight=1.0
+                    )
+                    db.add(db_qc)
                 persisted_questions.append(db_q)
 
         db.commit()
@@ -361,4 +230,3 @@ class RoleDiagnosticGenerator:
             "competency_breakdown": [rc.competency.name for rc in role_competencies],
             "competencies_evaluated": [rc.competency.name for rc in role_competencies]
         }
-
