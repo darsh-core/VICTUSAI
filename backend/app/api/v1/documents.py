@@ -23,10 +23,10 @@ from app.ai import get_embedding_provider, get_llm_provider
 router = APIRouter(prefix="/documents", tags=["Document Management & AI RAG"])
 
 # Constants
-UPLOAD_DIR = "/Users/darshini/.gemini/antigravity-ide/scratch/sih-competency-platform/uploads"
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(os.getcwd(), "uploads"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".pptx", ".txt"}
-MAX_FILE_SIZE = 30 * 1024 * 1024  # 30 MB
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
 
 class RAGSearchRequest(BaseModel):
     query: str
