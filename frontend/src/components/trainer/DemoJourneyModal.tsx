@@ -93,7 +93,7 @@ export const DemoJourneyModal: React.FC<DemoJourneyModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <span className="text-[10px] font-bold text-gov-gold uppercase tracking-widest block">SIH 2026 Presentation Mode</span>
-              <h2 className="text-lg font-bold text-white">Experience VICTUS AI Skill Intelligence</h2>
+              <h2 className="text-lg font-bold text-white">Experience VICTUS 11 Skill Intelligence</h2>
             </div>
           </div>
           <button 

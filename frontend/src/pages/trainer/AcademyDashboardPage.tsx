@@ -86,7 +86,7 @@ export const AcademyDashboardPage: React.FC = () => {
               onClick={() => setDemoModalOpen(true)}
               className="bg-gov-gold text-gov-blue-800 hover:bg-amber-400 font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition-all flex items-center gap-2 transform hover:-translate-y-0.5"
             >
-              <Sparkles className="h-4 w-4 text-gov-blue-900" /> Experience VICTUS AI
+              <Sparkles className="h-4 w-4 text-gov-blue-900" /> Experience VICTUS 11
             </button>
             <button
               onClick={fetchDashboard}

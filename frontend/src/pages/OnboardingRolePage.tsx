@@ -22,7 +22,7 @@ import { metaApi, Department, Domain } from "../services/metaApi";
 import { assessmentApi } from "../services/assessmentApi";
 import { JobRole } from "../types/competency";
 import { Card, CardContent, Button } from "../components/ui/Primitives";
-import victusLogo from "../assets/victusai.png";
+import victusLogo from "../assets/victus11.png";
 
 export const OnboardingRolePage: React.FC = () => {
   const navigate = useNavigate();
@@ -132,16 +132,16 @@ export const OnboardingRolePage: React.FC = () => {
       <div className="max-w-2xl w-full space-y-6">
         
         {/* Step Indicator Header */}
-        <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
+        <div className="bg-slate-900 text-white rounded-xl p-5 border border-slate-800 shadow-xs space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <img src={victusLogo} alt="VICTUS AI" className="h-8 w-auto bg-white p-1 rounded-lg" />
+              <img src={victusLogo} alt="VICTUS 11" className="h-8 w-auto bg-white p-1 rounded-md shadow-xs" />
               <div>
-                <h1 className="text-lg font-bold text-white uppercase tracking-wider">VICTUS AI Onboarding</h1>
-                <p className="text-xs text-amber-300 font-bold">Official Statistical Workforce Assessment</p>
+                <h1 className="text-base font-semibold text-white uppercase tracking-wide">VICTUS 11 Onboarding</h1>
+                <p className="text-xs text-slate-400 font-normal">Statistical Workforce Competency Assessment</p>
               </div>
             </div>
-            <span className="text-xs font-bold text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+            <span className="text-xs font-medium text-slate-300 bg-slate-800 px-3 py-1 rounded-md border border-slate-700">
               Step {activeStep} of 5
             </span>
           </div>
@@ -188,7 +188,7 @@ export const OnboardingRolePage: React.FC = () => {
                 <div className="border-b border-slate-100 pb-4">
                   <h2 className="text-xl font-bold text-slate-900">Let's understand your role before we assess your skills.</h2>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Your role and domain help VICTUS AI identify the competencies required for your work and personalize your learning path.
+                    Your role and domain help VICTUS 11 identify the competencies required for your work and personalize your learning path.
                   </p>
                 </div>
 
@@ -335,7 +335,7 @@ export const OnboardingRolePage: React.FC = () => {
                 <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-3">
                   <Sparkles className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                   <p className="leading-relaxed font-medium">
-                    VICTUS AI will generate domain-grounded diagnostic questions specific to <strong>{selectedDomain}</strong> and <strong>{selectedRole?.name}</strong>.
+                    VICTUS 11 will generate domain-grounded diagnostic questions specific to <strong>{selectedDomain}</strong> and <strong>{selectedRole?.name}</strong>.
                   </p>
                 </div>
 

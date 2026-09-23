@@ -16,17 +16,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]",
+          "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.99]",
           // Variants
-          variant === "primary" && "bg-gov-blue-600 hover:bg-gov-blue-700 text-white focus:ring-gov-blue-500 shadow-sm hover:shadow-md",
-          variant === "secondary" && "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-400 border border-slate-200",
-          variant === "outline" && "border border-slate-300 bg-white hover:bg-slate-50 hover:border-gov-blue-300 hover:text-gov-blue-700 text-slate-700 focus:ring-gov-blue-500 shadow-sm",
-          variant === "ghost" && "hover:bg-slate-100 text-slate-600",
-          variant === "destructive" && "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-sm hover:shadow-md",
+          variant === "primary" && "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 shadow-xs",
+          variant === "secondary" && "bg-slate-100 hover:bg-slate-200 text-slate-800 focus:ring-slate-400 border border-slate-200/80",
+          variant === "outline" && "border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-blue-500 shadow-2xs",
+          variant === "ghost" && "hover:bg-slate-100 text-slate-600 hover:text-slate-900",
+          variant === "destructive" && "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-xs",
           // Sizes
           size === "sm" && "px-3 py-1.5 text-xs",
           size === "md" && "px-4 py-2 text-sm",
-          size === "lg" && "px-6 py-3 text-base",
+          size === "lg" && "px-5 py-2.5 text-base",
           className
         )}
         disabled={isLoading}
@@ -49,19 +49,19 @@ Button.displayName = "Button"
 // CARD COMPONENT
 // ==========================================
 export const Card = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("bg-white border border-slate-200/80 rounded-xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] overflow-hidden", className)} {...props} />
+  <div className={cn("bg-white border border-slate-200/90 rounded-xl shadow-xs overflow-hidden", className)} {...props} />
 )
 
 export const CardHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("px-6 py-4 border-b border-slate-100 bg-slate-50/50", className)} {...props} />
+  <div className={cn("px-6 py-4 border-b border-slate-100 bg-slate-50/40", className)} {...props} />
 )
 
 export const CardTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h3 className={cn("text-base font-semibold text-gov-blue-600 tracking-tight", className)} {...props} />
+  <h3 className={cn("text-base font-semibold text-slate-900 tracking-tight", className)} {...props} />
 )
 
 export const CardDescription = ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-  <p className={cn("text-xs text-slate-500 mt-1", className)} {...props} />
+  <p className={cn("text-xs text-slate-500 mt-1 leading-relaxed", className)} {...props} />
 )
 
 export const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -69,7 +69,7 @@ export const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDi
 )
 
 export const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2", className)} {...props} />
+  <div className={cn("px-6 py-3.5 border-t border-slate-100 bg-slate-50/40 flex justify-end gap-2", className)} {...props} />
 )
 
 // ==========================================
@@ -83,12 +83,12 @@ export const Badge = ({ className, variant = "default", ...props }: BadgeProps) 
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border transition-colors",
-        variant === "default" && "bg-slate-100 text-slate-800 border-slate-200",
-        variant === "secondary" && "bg-gov-blue-50 text-gov-blue-700 border-gov-blue-200",
-        variant === "outline" && "text-slate-600 bg-white border-slate-300",
+        "inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border transition-colors",
+        variant === "default" && "bg-slate-100 text-slate-700 border-slate-200",
+        variant === "secondary" && "bg-blue-50 text-blue-700 border-blue-200",
+        variant === "outline" && "text-slate-600 bg-white border-slate-200",
         variant === "success" && "bg-emerald-50 text-emerald-700 border-emerald-200",
-        variant === "warning" && "bg-amber-50 text-amber-700 border-amber-200",
+        variant === "warning" && "bg-amber-50 text-amber-800 border-amber-200/80",
         variant === "error" && "bg-rose-50 text-rose-700 border-rose-200",
         variant === "info" && "bg-sky-50 text-sky-700 border-sky-200",
         className
@@ -106,9 +106,9 @@ export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   colorClassName?: string;
 }
 
-export const Progress = ({ className, value, colorClassName = "bg-gov-blue-500", ...props }: ProgressProps) => {
+export const Progress = ({ className, value, colorClassName = "bg-blue-600", ...props }: ProgressProps) => {
   return (
-    <div className={cn("h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50", className)} {...props}>
+    <div className={cn("h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/60", className)} {...props}>
       <div
         className={cn("h-full transition-all duration-300", colorClassName)}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
@@ -128,11 +128,11 @@ export const Alert = ({ className, variant = "default", children, ...props }: Al
   return (
     <div
       className={cn(
-        "p-4 rounded-md border flex gap-3 text-sm leading-relaxed",
+        "p-4 rounded-lg border flex gap-3 text-sm leading-relaxed shadow-2xs",
         variant === "default" && "bg-slate-50 text-slate-800 border-slate-200",
-        variant === "warning" && "bg-amber-50 text-amber-800 border-amber-200",
-        variant === "destructive" && "bg-red-50 text-red-800 border-red-200",
-        variant === "success" && "bg-emerald-50 text-emerald-800 border-emerald-200",
+        variant === "warning" && "bg-amber-50 text-amber-900 border-amber-200",
+        variant === "destructive" && "bg-rose-50 text-rose-900 border-rose-200",
+        variant === "success" && "bg-emerald-50 text-emerald-900 border-emerald-200",
         className
       )}
       role="alert"

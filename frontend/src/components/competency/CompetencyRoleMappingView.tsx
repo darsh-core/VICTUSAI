@@ -160,7 +160,7 @@ export const CompetencyRoleMappingView = () => {
             Competency & Role Mapping Architecture
           </h1>
           <p className="text-slate-200 text-xs md:text-sm leading-relaxed font-medium">
-            This interactive architecture specifies how <strong className="text-white font-bold">VICTUS AI</strong> maps official government training manuals and RAG-generated MCQs directly to <strong className="text-white font-bold">Target Competencies</strong> and <strong className="text-white font-bold">iGOT Karmayogi Job Roles</strong>.
+            This interactive architecture specifies how <strong className="text-white font-bold">VICTUS 11</strong> maps official government training manuals and RAG-generated MCQs directly to <strong className="text-white font-bold">Target Competencies</strong> and <strong className="text-white font-bold">iGOT Karmayogi Job Roles</strong>.
           </p>
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-900/90 text-blue-200 border border-blue-600 shadow-xs">

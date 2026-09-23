@@ -214,9 +214,10 @@ def delete_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     # 1. Remove physical file if exists
-    if doc.storage_path and os.path.exists(doc.storage_path):
+    target_path = getattr(doc, "file_path", None)
+    if target_path and os.path.exists(target_path):
         try:
-            os.remove(doc.storage_path)
+            os.remove(target_path)
         except Exception:
             pass
 

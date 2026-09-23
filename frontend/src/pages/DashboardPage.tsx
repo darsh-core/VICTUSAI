@@ -309,7 +309,7 @@ export const DashboardPage = () => {
   }
 
   // -------------------------------------------------------------
-  // LEARNER DASHBOARD (VICTUS AI EMPLOYEE EXPERIENCE)
+  // LEARNER DASHBOARD (VICTUS 11 EMPLOYEE EXPERIENCE)
   // -------------------------------------------------------------
   if (gapsLoading) {
     return (
@@ -410,45 +410,45 @@ export const DashboardPage = () => {
       </div>
 
       {/* Flagship Competency Journey Banner */}
-      <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
+      <div className="bg-slate-900 text-white rounded-xl p-5 border border-slate-800 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gov-gold/20 text-gov-gold flex items-center justify-center border border-gov-gold/30 shrink-0">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30 shrink-0">
+              <Sparkles className="w-4.5 h-4.5" />
             </div>
             <div>
-              <h2 className="text-base font-extrabold uppercase tracking-wide text-white">MY COMPETENCY JOURNEY</h2>
-              <p className="text-xs text-amber-300 font-bold">Closed-Loop Competency Elevation & Role Readiness</p>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-white">Competency Elevation Journey</h2>
+              <p className="text-xs text-slate-400 font-normal">Closed-Loop Skill Improvement & Role Readiness</p>
             </div>
           </div>
-          <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/40">
+          <span className="text-xs font-medium text-emerald-300 bg-emerald-950/60 px-3 py-1 rounded-md border border-emerald-500/30">
             Stage 4 of 8: Personalized Learning
           </span>
         </div>
 
         {/* Competency Journey Pipeline */}
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-2">
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-1">
           {[
-            { step: "1", title: "DISCOVER", active: false, done: true },
-            { step: "2", title: "ASSESS", active: false, done: true },
-            { step: "3", title: "IDENTIFY GAP", active: false, done: true },
-            { step: "4", title: "LEARN", active: true, done: false },
-            { step: "5", title: "PRACTICE", active: false, done: false },
-            { step: "6", title: "REASSESS", active: false, done: false },
-            { step: "7", title: "IMPROVE", active: false, done: false },
-            { step: "8", title: "ROLE READY", active: false, done: false }
+            { step: "1", title: "Discover", active: false, done: true },
+            { step: "2", title: "Assess", active: false, done: true },
+            { step: "3", title: "Identify Gap", active: false, done: true },
+            { step: "4", title: "Learn", active: true, done: false },
+            { step: "5", title: "Practice", active: false, done: false },
+            { step: "6", title: "Reassess", active: false, done: false },
+            { step: "7", title: "Improve", active: false, done: false },
+            { step: "8", title: "Role Ready", active: false, done: false }
           ].map((item) => (
             <div 
               key={item.step}
-              className={`flex flex-col items-center justify-center p-2 rounded-lg border text-center transition-all ${
+              className={`flex flex-col items-center justify-center py-2 px-1.5 rounded-md border text-center transition-colors ${
                 item.active 
-                  ? "bg-gov-gold text-gov-blue-900 border-gov-gold font-extrabold shadow-md scale-105" 
+                  ? "bg-blue-600 text-white border-blue-500 font-semibold shadow-xs" 
                   : item.done 
-                  ? "bg-slate-800 text-emerald-400 border-emerald-500/30 font-semibold" 
-                  : "bg-slate-800/40 text-slate-500 border-slate-700/50 opacity-60"
+                  ? "bg-slate-800 text-emerald-400 border-emerald-500/20 font-medium" 
+                  : "bg-slate-800/30 text-slate-500 border-slate-800 opacity-50"
               }`}
             >
-              <span className="text-[10px] uppercase font-bold tracking-tight">{item.title}</span>
+              <span className="text-[11px] font-medium tracking-tight">{item.title}</span>
             </div>
           ))}
         </div>

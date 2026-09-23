@@ -95,7 +95,7 @@ export const DemoIGOTPlayerPage: React.FC = () => {
         <h2 className="text-xl font-bold text-slate-900">Learning Resource Unavailable</h2>
         <p className="text-sm text-slate-500">The requested learning resource could not be loaded.</p>
         <Button variant="outline" onClick={() => navigate("/dashboard")}>
-          Return to VICTUS AI Dashboard
+          Return to VICTUS 11 Dashboard
         </Button>
       </div>
     );
@@ -141,12 +141,11 @@ export const DemoIGOTPlayerPage: React.FC = () => {
           </div>
           <Button
             size="sm"
-            variant="outline"
             onClick={() => navigate("/dashboard")}
-            className="bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs h-8 gap-1.5"
+            className="bg-amber-400 hover:bg-amber-500 text-gov-blue-950 font-bold border-none text-xs h-8 px-3.5 gap-1.5 shadow-sm transition-all"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Exit to VICTUS AI</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-gov-blue-950" />
+            <span>Exit to VICTUS 11</span>
           </Button>
         </div>
       </header>
