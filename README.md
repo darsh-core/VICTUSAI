@@ -1,4 +1,4 @@
-# SANKHYAI (संख्या-AI) 🎯
+# VICTUS11
 ### AI-Powered Competency Intelligence & Personalized Learning Platform for the Official Statistical System of India
 
 [![SIH 2026](https://img.shields.io/badge/Smart%20India%20Hackathon-2026-orange.svg)](https://www.sih.gov.in/)
@@ -14,7 +14,7 @@
 
 ## 📌 Executive Summary
 
-**SANKHYAI** is an enterprise-grade, closed-loop competency intelligence and adaptive learning ecosystem built for the **Ministry of Statistics and Programme Implementation (MoSPI)**, Government of India (Smart India Hackathon 2026 — Problem Statement **26101**).
+**VICTUS11** is an enterprise-grade, closed-loop competency intelligence and adaptive learning ecosystem built for the **Ministry of Statistics and Programme Implementation (MoSPI)**, Government of India (Smart India Hackathon 2026 — Problem Statement **26101**).
 
 The platform transforms workforce development across the Indian Statistical Service (ISS), Subordinate Statistical Service (SSS), and MoSPI administrative cadres by:
 1. **Evaluating officials against role-specific competency matrices** spanning 5 standardized proficiency levels (Basic Awareness to Master/Strategy).
